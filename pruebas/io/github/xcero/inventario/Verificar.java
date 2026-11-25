@@ -6,12 +6,18 @@ import io.github.xcero.inventario.codigobarras.Ean13;
 import io.github.xcero.inventario.codigobarras.PanelCodigoBarras;
 import io.github.xcero.inventario.modelo.DVD;
 import io.github.xcero.inventario.modelo.Product;
+import io.github.xcero.inventario.persistencia.AlmacenJson;
+import io.github.xcero.inventario.persistencia.JsonSimple;
 import io.github.xcero.inventario.servicio.Inventory;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.imageio.ImageIO;
 
 /**
@@ -39,6 +45,11 @@ public class Verificar {
         caso("5b. Entrada y salida de stock por codigo de barras", Verificar::ejercicio5b);
         caso("6. Dibujo de las barras (comparado contra la tabla de Code 128)", Verificar::ejercicio6);
         caso("7. Reto: digito de control EAN-13", Verificar::ejercicio7);
+        caso("8. Guardar el inventario en JSON", Verificar::ejercicio8);
+        caso("9. Cargar el inventario desde JSON (con su tipo: CD/DVD)", Verificar::ejercicio9);
+        caso("10a. Consulta: buscar por nombre", Verificar::ejercicio10a);
+        caso("10b. Consulta: stock bajo", Verificar::ejercicio10b);
+        caso("10c. Consulta: ordenados por valor", Verificar::ejercicio10c);
 
         System.out.printf("%nResultado: %d OK, %d con falla, %d pendientes%n", ok, fallas, pendientes);
         if (fallas == 0 && pendientes == 0) {
@@ -148,6 +159,95 @@ public class Verificar {
         esperar(Ean13.esValido("4006381333931"), "4006381333931 es valido");
         esperar(!Ean13.esValido("4006381333932"), "4006381333932 NO es valido (ultimo digito cambiado)");
         esperar(!Ean13.esValido("12345"), "un codigo que no tiene 13 digitos no es valido");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void ejercicio8() throws Exception {
+        Inventory inv = new Inventory();
+        Product cafe = new Product(1, "Cafe \"Lempa\" 1 lb", 10, 6.5);
+        cafe.setCodigoBarras("7412000000011");
+        inv.addProduct(cafe);
+        inv.addProduct(new DVD(2, "Hackers", 3, 19));
+        Path ruta = Files.createTempFile("inventario", ".json");
+        AlmacenJson.guardar(inv, ruta);
+        String texto = Files.readString(ruta, StandardCharsets.UTF_8);
+        Object raiz;
+        try {
+            raiz = JsonSimple.leer(texto);
+        } catch (IllegalArgumentException e) {
+            throw new AssertionError("el archivo no es JSON valido: " + e.getMessage() + "\n             contenido: " + texto);
+        }
+        esperar(raiz instanceof Map, "la raiz debe ser un objeto { \"productos\": [...] }");
+        Object lista = ((Map<String, Object>) raiz).get("productos");
+        esperar(lista instanceof List && ((List<Object>) lista).size() == 2, "\"productos\" debe ser una lista con 2 productos");
+        Map<String, Object> p1 = (Map<String, Object>) ((List<Object>) lista).get(0);
+        Map<String, Object> p2 = (Map<String, Object>) ((List<Object>) lista).get(1);
+        esperar("Cafe \"Lempa\" 1 lb".equals(p1.get("nombre")), "el nombre con comillas se perdio o rompio: " + p1.get("nombre") + " (usa JsonSimple.texto)");
+        esperar("7412000000011".equals(p1.get("codigoBarras")), "falta codigoBarras (como texto) en el primer producto");
+        esperar(p1.get("precio") instanceof Number && Math.abs(((Number) p1.get("precio")).doubleValue() - 6.5) < 1e-9, "precio debe ser 6.5; dio " + p1.get("precio"));
+        esperar(p1.get("id") instanceof Number && ((Number) p1.get("id")).intValue() == 1
+                && p1.get("cantidad") instanceof Number && ((Number) p1.get("cantidad")).intValue() == 10, "id/cantidad del primer producto");
+        esperar("DVD".equals(p2.get("tipo")), "el segundo producto debe tener \"tipo\": \"DVD\"; dio " + p2.get("tipo"));
+        esperar(p2.containsKey("codigoBarras") && p2.get("codigoBarras") == null, "sin codigo de barras, escribe \"codigoBarras\": null");
+    }
+
+    private static void ejercicio9() throws Exception {
+        String json = """
+            {
+              "productos": [
+                { "tipo": "Product", "id": 1, "nombre": "Cafe \\"Lempa\\" 1 lb", "cantidad": 10, "precio": 6.5, "codigoBarras": "7412000000011" },
+                { "tipo": "DVD", "id": 2, "nombre": "Hackers", "cantidad": 1, "precio": 100, "codigoBarras": null },
+                { "tipo": "CD", "id": 3, "nombre": "Musica", "cantidad": 2, "precio": 5, "codigoBarras": null }
+              ]
+            }
+            """;
+        Path ruta = Files.createTempFile("inventario", ".json");
+        Files.writeString(ruta, json, StandardCharsets.UTF_8);
+        Inventory inv = AlmacenJson.cargar(ruta);
+        esperar(inv != null && inv.getAllProducts().size() == 3, "debe cargar 3 productos");
+        Product cafe = inv.getProductById(1);
+        esperar(cafe != null && "Cafe \"Lempa\" 1 lb".equals(cafe.getName()), "el nombre del producto 1 no coincide: " + (cafe == null ? null : cafe.getName()));
+        esperar(cafe.getQuantity() == 10 && Math.abs(cafe.getPrice() - 6.5) < 1e-9, "cantidad/precio del producto 1");
+        esperar("7412000000011".equals(cafe.getCodigoBarras()), "no se cargo el codigo de barras");
+        esperar(inv.getProductById(2) instanceof DVD, "el producto 2 debe volver a ser un DVD (usa \"tipo\")");
+        esperar(inv.getProductById(3) instanceof io.github.xcero.inventario.modelo.CD, "el producto 3 debe volver a ser un CD");
+        Path noExiste = ruta.resolveSibling("no-existe-" + System.nanoTime() + ".json");
+        Inventory vacio = AlmacenJson.cargar(noExiste);
+        esperar(vacio != null && vacio.getAllProducts().isEmpty(), "si el archivo no existe, debe devolver un inventario vacio");
+    }
+
+    private static Inventory inventarioConsultas() {
+        Inventory inv = new Inventory();
+        inv.addProduct(new Product(1, "Cafe 1 lb", 10, 6.5));    // valor 65
+        inv.addProduct(new Product(2, "Azucar", 2, 1.1));       // valor 2.2
+        inv.addProduct(new Product(3, "CAFE molido", 1, 50));   // valor 50
+        inv.addProduct(new Product(4, "Frijol", 5, 1));         // valor 5
+        return inv;
+    }
+
+    private static List<Integer> ids(List<Product> lista) {
+        List<Integer> r = new ArrayList<>();
+        for (Product p : lista) r.add(p.getId());
+        return r;
+    }
+
+    private static void ejercicio10a() {
+        Inventory inv = inventarioConsultas();
+        List<Integer> r = ids(inv.buscarPorNombre("cafe"));
+        esperar(r.equals(List.of(1, 3)), "buscar \"cafe\" debe dar [1, 3] (sin importar mayusculas); dio " + r);
+        esperar(inv.buscarPorNombre("xyz").isEmpty(), "sin resultados debe devolver una lista vacia, no null");
+    }
+
+    private static void ejercicio10b() {
+        List<Integer> r = ids(inventarioConsultas().stockBajo(2));
+        esperar(r.equals(List.of(2, 3)), "stockBajo(2) debe dar [2, 3] (cantidad <= 2); dio " + r);
+    }
+
+    private static void ejercicio10c() {
+        Inventory inv = inventarioConsultas();
+        List<Integer> r = ids(inv.ordenadosPorValor());
+        esperar(r.equals(List.of(1, 3, 4, 2)), "ordenados por valor (mayor a menor) debe dar [1, 3, 4, 2]; dio " + r);
+        esperar(ids(inv.getAllProducts()).equals(List.of(1, 2, 3, 4)), "ordenar no debe cambiar el orden del inventario original");
     }
 
     // ------------------------------------------------------------------------------------------

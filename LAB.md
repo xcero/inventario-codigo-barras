@@ -2,7 +2,8 @@
 
 Parte del proyecto final de **Java Fundamentals** (repo `xcero/Fundamentals`) y lo convierte en un proyecto
 propio, ordenado en *packages*, con manejo de stock por código de barras. Tú escribes el código; el
-programa `Verificar` te dice qué está bien y qué falta.
+programa `Verificar` te dice qué está bien y qué falta. Los pasos 8 a 11 hacen que el inventario se guarde en un
+archivo y se pueda consultar.
 
 ```
 [OK]        el ejercicio está bien
@@ -160,6 +161,94 @@ viejo “Generar archivo códigos de barra”, que dependía de tener la fuente 
 Los productos comerciales traen **EAN-13**: 13 dígitos, y el último es de control. Si lo validas antes de
 buscar, un código mal leído no termina en “producto no encontrado”. El algoritmo está en `Ean13.java`.
 Úsalo en la opción “Escanear”: si el código tiene 13 dígitos y no es válido, avisa “lectura inválida”.
+
+---
+
+## Paso 8. Guardar el inventario en un archivo JSON (ejercicio 8)
+
+Hoy el inventario vive **solo en memoria**: una `ArrayList` dentro de `Inventory`. Al cerrar el programa se
+pierde todo, y los 3 productos que ves al abrir están escritos a mano en el `main`. Para que sea consultable de
+verdad, primero hay que **guardarlo**.
+
+Se guarda en **JSON**, el formato de texto que usan casi todas las APIs (MIRA incluida):
+
+```json
+{
+  "productos": [
+    { "tipo": "Product", "id": 1, "nombre": "Cafe 1 lb", "cantidad": 10, "precio": 6.5, "codigoBarras": "7412000000011" },
+    { "tipo": "DVD",     "id": 2, "nombre": "Hackers",   "cantidad": 3,  "precio": 19.0, "codigoBarras": null }
+  ]
+}
+```
+
+- `{ }` es un **objeto** (pares `"campo": valor`), `[ ]` es una **lista**. Los textos van entre comillas; los
+  números, `true`/`false` y `null`, sin comillas.
+- **`"tipo"` es la clave del ejercicio**: sin él, al cargar no sabrías si crear un `Product`, un `CD` o un `DVD`,
+  y el DVD perdería su 5% (ejercicio 2). Se obtiene con `producto.getClass().getSimpleName()`.
+
+Escribe `AlmacenJson.guardar(inventario, ruta)` (en el package nuevo `persistencia`):
+
+1. Arma el texto con un `StringBuilder`, recorriendo `inventario.getAllProducts()`.
+2. **Todo `String` va con `JsonSimple.texto(...)`**: le pone comillas y escapa lo especial. Un nombre como
+   `Cafe "Lempa"` rompe el archivo si lo pegas tal cual (el verificador lo prueba).
+3. Coma **entre** productos, no después del último.
+4. Decimales con punto: `String.valueOf(6.5)` → `6.5`. `String.format("%.2f", ...)` puede dar `6,50` según el
+   idioma de Windows, y eso no es JSON válido.
+5. Escribe el archivo con `Files.writeString(ruta, texto, StandardCharsets.UTF_8)`.
+
+## Paso 9. Cargar el inventario desde JSON (ejercicio 9)
+
+Leer JSON es mucho más difícil que escribirlo, así que el lector ya está hecho: `JsonSimple.leer(texto)`
+(léelo si tienes curiosidad, está comentado). Convierte el texto en objetos de Java:
+
+| JSON | Java |
+|---|---|
+| `{ ... }` | `Map<String, Object>` |
+| `[ ... ]` | `List<Object>` |
+| `"texto"` | `String` |
+| `12`, `6.5` | `Double` → usa `((Number) x).intValue()` o `.doubleValue()` |
+| `null` | `null` |
+
+Escribe `AlmacenJson.cargar(ruta)`:
+
+1. Si el archivo no existe (`Files.exists(ruta)`), devuelve un `Inventory` vacío, sin error.
+2. `Files.readString(ruta, StandardCharsets.UTF_8)` → `JsonSimple.leer(...)` → cast a `Map<String, Object>`.
+3. Recorre `(List<Object>) raiz.get("productos")`; cada elemento es un `Map<String, Object>`.
+4. Con un `switch` sobre `"tipo"` crea `new CD(...)`, `new DVD(...)` o `new Product(...)`, y ponle el código
+   de barras.
+
+Concepto nuevo: **cast**. `JsonSimple.leer` devuelve `Object` porque no sabe qué hay en el archivo; tú sí sabes
+que la raíz es un objeto, así que le dices a Java "trátalo como `Map`": `(Map<String, Object>) raiz`. Si te
+equivocas, Java lanza `ClassCastException`.
+
+## Paso 10. Consultas (ejercicio 10)
+
+Con los datos guardados, el inventario se vuelve útil si puedes **preguntarle cosas**. En `Inventory`:
+
+- **10a.** `buscarPorNombre("cafe")` → los productos cuyo nombre contiene el texto, sin importar mayúsculas.
+- **10b.** `stockBajo(2)` → los productos con cantidad ≤ 2: la lista de "hay que reponer".
+- **10c.** `ordenadosPorValor()` → todos, del de mayor valor de inventario al menor.
+
+Las tres devuelven una lista **nueva**: nunca la lista interna `products`, porque quien la reciba podría
+modificar tu inventario sin pasar por `addProduct`. Si no hay resultados, devuelven una lista vacía y no
+`null`. El verificador revisa también que ordenar no cambie el orden del inventario original.
+
+Para 10c investiga `Comparator`: `lista.sort((a, b) -> Double.compare(b.calculateInventoryValue(), a.calculateInventoryValue()))`
+ordena de mayor a menor. Después prueba la versión corta con `Comparator.comparingDouble(...).reversed()`.
+
+## Paso 11. Conectarlo al programa (sin verificador)
+
+Ahora haz que el programa use todo lo anterior, en la consola (`InventoryTest`) y después en la ventana:
+
+1. **Al iniciar**: `Inventory inv = AlmacenJson.cargar(Path.of("inventario.json"));`. Si quedó vacío (primera
+   vez), agrega los 3 productos de ejemplo.
+2. **Después de agregar un producto o registrar un movimiento**: `AlmacenJson.guardar(inv, ruta)`. Así no se
+   pierde nada aunque cierres la ventana con la X.
+3. **Opciones nuevas del menú**: "Buscar por nombre", "Productos con stock bajo" y "Ranking por valor".
+4. Prueba real: agrega un producto, cierra el programa, vuelve a abrirlo y busca ese producto. Abre
+   `inventario.json` en VS Code para ver lo que guardaste.
+
+`inventario.json` ya está en `.gitignore`: son datos de tu máquina, no código, así que no se suben a GitHub.
 
 ---
 

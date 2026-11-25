@@ -4,3 +4,5 @@ bin/
 # Imagenes y archivos que genera el programa al ejecutarse.
 codigo-*.png
 codigo_barras.*
+# Datos del inventario guardados por el programa (son de tu maquina, no codigo).
+inventario.json

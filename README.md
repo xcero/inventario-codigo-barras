@@ -38,6 +38,7 @@ src/io/github/xcero/inventario/
 ├── modelo/        Product, CD, DVD
 ├── servicio/      Inventory
 ├── codigobarras/  Code128, Code128Patrones, PanelCodigoBarras, Ean13
+├── persistencia/  AlmacenJson (guardar/cargar inventario.json), JsonSimple (lector JSON)
 └── app/           InventoryTest (consola), InventoryTestGUI, VentanaCodigoBarras
 pruebas/           Verificar: revisa los ejercicios del lab
 ```

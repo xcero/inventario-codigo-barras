@@ -58,6 +58,27 @@ public class Inventory {
         return totalValue;
     }
 
+    // ===================== LAB: Ejercicio 10 (consultas) =====================
+    // Ya puedes buscar por ID; estas tres hacen el inventario "consultable". Las tres devuelven una lista NUEVA
+    // (nunca la lista interna "products"), y una lista vacia -- no null -- si no hay resultados.
+
+    // 10a. Productos cuyo nombre CONTIENE el texto, sin importar mayusculas: "cafe" encuentra "Cafe 1 lb".
+    // Pista: nombre.toLowerCase().contains(texto.toLowerCase()).
+    public List<Product> buscarPorNombre(String texto) {
+        throw new UnsupportedOperationException("Ejercicio 10a: escribe buscarPorNombre");
+    }
+
+    // 10b. Productos con cantidad MENOR O IGUAL al minimo: la lista de "hay que reponer".
+    public List<Product> stockBajo(int minimo) {
+        throw new UnsupportedOperationException("Ejercicio 10b: escribe stockBajo");
+    }
+
+    // 10c. Todos los productos ordenados por valor de inventario (calculateInventoryValue), del mayor al menor.
+    // Pista: copia la lista y usa lista.sort(...) con un Comparator; o investiga Comparator.comparingDouble.
+    public List<Product> ordenadosPorValor() {
+        throw new UnsupportedOperationException("Ejercicio 10c: escribe ordenadosPorValor");
+    }
+
     // ===================== LAB: Ejercicio 5 (codigo de barras) =====================
     // Lo que hace un lector de codigo de barras -- o el telefono usado como lector -- es "teclear"
     // el codigo y un Enter. Tu programa solo tiene que buscar ese texto.

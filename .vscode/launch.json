@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Verificar ejercicios",
+      "request": "launch",
+      "mainClass": "io.github.xcero.inventario.Verificar",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "java",
+      "name": "Inventario (consola)",
+      "request": "launch",
+      "mainClass": "io.github.xcero.inventario.app.InventoryTest",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "java",
+      "name": "Inventario (ventana)",
+      "request": "launch",
+      "mainClass": "io.github.xcero.inventario.app.InventoryTestGUI"
+    },
+    {
+      "type": "java",
+      "name": "Ver codigo de barras",
+      "request": "launch",
+      "mainClass": "io.github.xcero.inventario.app.VentanaCodigoBarras",
+      "args": "CAFE-001"
+    }
+  ]
+}

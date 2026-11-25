@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Compilar (javac)",
+      "type": "shell",
+      "command": "if (Test-Path bin) { Remove-Item -Recurse -Force bin }; javac -encoding UTF-8 -d bin (Get-ChildItem -Recurse -Filter *.java -Path src, pruebas).FullName",
+      "options": { "shell": { "executable": "powershell.exe", "args": ["-NoProfile", "-Command"] } },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Verificar ejercicios",
+      "type": "shell",
+      "command": "java -cp bin io.github.xcero.inventario.Verificar",
+      "options": { "shell": { "executable": "powershell.exe", "args": ["-NoProfile", "-Command"] } },
+      "dependsOn": "Compilar (javac)",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    }
+  ]
+}

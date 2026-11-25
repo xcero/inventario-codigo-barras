@@ -1,0 +1,6 @@
+# Lo compilado se genera con javac (o VS Code); nunca se sube.
+bin/
+*.class
+# Imagenes y archivos que genera el programa al ejecutarse.
+codigo-*.png
+codigo_barras.*

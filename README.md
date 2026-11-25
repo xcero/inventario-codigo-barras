@@ -1,33 +1,46 @@
-# Fundamentals
+# Inventario con código de barras (Java)
 
-         	System.out.println("╔══════════════════════════════════════════╗");
-        	System.out.println("║           JAVA FUNDAMENTALS              ║");
-    	    System.out.println("║1. Añadir producto                        ║");
-    	    System.out.println("║2. Calcular valor total del inventario    ║");
-    	    System.out.println("║3. Imprimir inventario                    ║");
-    	    System.out.println("║4. Explorar items                         ║");
-    	    System.out.println("║5. Add CD al inventario                   ║");
-    	    System.out.println("║6. Add DVD                                ║");
-    	    System.out.println("║7. Codigo de Barra                        ║");
-    	    System.out.println("║8. Exit                                   ║");
-    	    System.out.println("║Elige una opción:                         ║");
-    	    System.out.println("║                                          ║");
-    	    System.out.println("╚══════════════════════════════════════════╝");
+Inventario sencillo en Java con manejo de stock por **código de barras**: buscar un producto escaneando su
+código (con un lector USB o con el teléfono como lector), registrar entradas y salidas, y generar e imprimir
+códigos **Code 128** sin instalar fuentes.
 
-![screenshot](https://github.com/xcero/Fundamentals/blob/main/Java.png)
+Nace del proyecto final de *Java Fundamentals* ([xcero/Fundamentals](https://github.com/xcero/Fundamentals));
+la historia de git de ese proyecto se conserva aquí. El README original está en
+[docs/README-Fundamentals.md](docs/README-Fundamentals.md).
 
-Codigo de Barra sitio  https://grandzebu.net debes tener instalado la FONT  Code 128 del sitio https://grandzebu.net/informatique/codbar-en/code128.htm
+![screenshot](docs/Java.png)
 
-Este proyecto se refiere a lo mas basico en Java , y corresponde al proyecto final de Java Fundamentals
-Puedes ejecutarlo en consola  recomiendo instalar el paquete openjdk version "11.0.26" 2025-01-21 LTS
-Amazon Coretto https://corretto.aws/downloads/latest/amazon-corretto-11-x64-windows-jdk.msi
-Instala y luego edita las variables de Entorno , creando una llamada java que apunte a C:\Program Files\Amazon Corretto\jdk11.0.26_4\bin
+## Requisitos
 
-Despues descarga el proyecto e ingresa a carpeta abre CMD y ejecuta  java -cp .\bin proyecto.InventoryTest
+- JDK 21 (por ejemplo Microsoft Build of OpenJDK).
+- VS Code con el **Extension Pack for Java**.
 
-Son exactamente las clases mas simples en java agrege este 2025 la interfaz grafica InventoryTestGUI
+No usa Maven ni Gradle: es Java puro, para aprender cómo funcionan los packages, `javac` y el classpath.
 
-Recuerda cualquier cambio tienes que compilar las class con javac -encoding UTF-8 *.java
+## Ejecutar
 
-Y los class compilados siempre deben de estar en bin para ejecutar.  java -cp .\bin proyecto.InventoryTestGUI
+En VS Code: **Run and Debug** (Ctrl+Shift+D) → *Inventario (consola)*, *Inventario (ventana)* o
+*Ver código de barras*.
 
+En la terminal:
+
+```powershell
+javac -encoding UTF-8 -d bin (Get-ChildItem -Recurse -Filter *.java -Path src, pruebas).FullName
+java -cp bin io.github.xcero.inventario.app.InventoryTest
+```
+
+## Estructura
+
+```
+src/io/github/xcero/inventario/
+├── modelo/        Product, CD, DVD
+├── servicio/      Inventory
+├── codigobarras/  Code128, Code128Patrones, PanelCodigoBarras, Ean13
+└── app/           InventoryTest (consola), InventoryTestGUI, VentanaCodigoBarras
+pruebas/           Verificar: revisa los ejercicios del lab
+```
+
+## Lab
+
+Los ejercicios para mejorar el proyecto están en [LAB.md](LAB.md). Para ver cómo vas:
+**Terminal → Run Task… → Verificar ejercicios**.

@@ -1,0 +1,7 @@
+{
+  // Proyecto Java "sin build tool": VS Code compila src y pruebas a bin.
+  "java.project.sourcePaths": ["src", "pruebas"],
+  "java.project.outputPath": "bin",
+  "java.project.referencedLibraries": [],
+  "files.encoding": "utf8"
+}

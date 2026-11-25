@@ -8,7 +8,9 @@ Nace del proyecto final de *Java Fundamentals* ([xcero/Fundamentals](https://git
 la historia de git de ese proyecto se conserva aquí. El README original está en
 [docs/README-Fundamentals.md](docs/README-Fundamentals.md).
 
-![screenshot](docs/Java.png)
+![Ventana del inventario (InventoryTestGUI)](docs/inventario-gui.png)
+
+*Ventana del inventario (`InventoryTestGUI`): en VS Code, Run and Debug → **Inventario (ventana)**.*
 
 ## Requisitos
 
